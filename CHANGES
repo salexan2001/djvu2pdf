@@ -1,0 +1,20 @@
+Version 0.7.2: Code cleanup
+
+Version 0.7.1: MacOS X support, multiple file support, commandline option
+               -o removed (for sanity reasons with the multiple file support)
+               (Thanks to mike who commented on the problem)
+
+Version 0.7:   Manpage added, new commandline option added (-o)
+
+Version 0.6.2: Check for ddvju, pnmtops and gs added.
+               Thanks to maik.
+
+Version 0.6.1: Small bugfix.  
+
+Version 0.6:   Code cleanup, safe temporary files. 
+               Added options -q and -c
+
+Version 0.5:   Added -format=pnm option for better resolution.
+               Thanks to Francisco Fernandez
+
+Version 0.4:   Initial release

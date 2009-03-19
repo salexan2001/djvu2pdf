@@ -1,0 +1,190 @@
+#!/bin/sh
+# (c) Christoph Sieghart <sigi@0x2a.at> 2007
+
+VERSION=0.7.2
+
+# Flags for commandline options
+Q_FLAG=0
+C_FLAG=0
+
+trap 'clean_temp_dir ; clean_cursor' 0 1 2
+
+#*****************************************************************************
+# - Functions
+#*****************************************************************************
+
+check_print_error() {
+  if [ $? -ne 0 ]
+  then
+    echo "Error: $0: $1"
+    exit 1
+  fi
+}
+
+print_version() {
+  echo "djvu2pdf $VERSION - sigi@0x2a.at"
+}
+
+print_help() {
+  print_version
+  echo -e "\n  Usage: ./djvu2pdf filename.djvu [filename.djvu] ...\n"
+  echo "  -h       Prints this help"
+  echo "  -v       Prints the version number"
+  echo "  -q       Don't print any informal messages"
+  echo -e "  -c       Don't use terminal escape sequences to move cursor \n"
+  exit 1
+}
+
+print_quiet() {
+  if [ $Q_FLAG -eq 0 ]; then
+    echo -en $1
+  fi
+}
+
+move_cursor() {
+  if [ $Q_FLAG -eq 1 ]; then
+    return
+  elif [ $C_FLAG -eq 1 ]; then
+    echo -ne "\n"
+    return 
+  fi
+  # cursor magic
+  echo -en "\033[35D" 
+}
+clean_cursor() {
+# if the cursor 'magic' messes anything up
+    if [ $C_FLAG -eq 0 ]; then
+      if [ $Q_FLAG -eq 0 ]; then
+        tput sgr0
+      fi
+    fi
+}
+
+clean_temp_files() {
+    rm -rf "$TEMP"/* >/dev/null 2>&1
+}
+
+clean_temp_dir() {
+    rm -rf "$TEMP" >/dev/null 2>&1
+}
+
+#*****************************************************************************
+# - Programm checks
+#*****************************************************************************
+
+# MacOS and BSD compatibility
+which seq >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    SEQ=seq
+else
+    SEQ=jot
+fi
+
+ORIG_PARAM="$@"
+for i in "pnmtops netpbm" "ddjvu djvulibre" "gs ghostscript"; do
+    set $i
+    which $1 >/dev/null 2>&1
+    check_print_error "$1 not found. Install $2"
+done
+set -- $ORIG_PARAM
+
+#*****************************************************************************
+# - Temporary Files
+#*****************************************************************************
+
+TEMP="${TMPDIR:=/tmp}/djvu2pdf.$$"
+mkdir $TEMP
+check_print_error "Creating temporary directory failed!"
+
+# Child processes should use our temporary directory
+TMPDIR=$TEMP
+
+#*****************************************************************************
+# - Commandline options
+#*****************************************************************************
+
+while getopts hvcq opt
+do
+  case "$opt" in
+    v) print_version
+       exit 1;;
+    h) print_help;;
+    c) C_FLAG=1;;
+    q) Q_FLAG=1;;
+    \?) exit 1;;
+  esac
+done
+
+shift `expr $OPTIND - 1`
+
+if [ -z $1 ]; then
+  echo -e "Error: $0: No file specified for conversion"
+  exit 1
+fi
+
+#*****************************************************************************
+# - Main loop
+#*****************************************************************************
+
+while [ $# -gt 0 ]; do
+
+    if [ ! -f $1 ]; then
+        echo -e "Error: $0: File '$1' not found"
+        exit 1
+    fi
+
+    FILENAME=$1
+    FILEBASE=`basename "$FILENAME" .djvu`
+    OUTPUTFILE="${FILEBASE}.pdf"
+    PAGES=`djvudump "$FILENAME" | grep pages | awk '{print $8;}'`
+    ZEROCOUNT=$(expr `echo $PAGES | wc -m` - 1)
+    COUNT=1
+    TENS=1
+
+    print_quiet "Converting $FILENAME to $OUTPUTFILE\n"
+
+# We dump every page at once, so that we can display a status line
+# Not the most efficient way, but I really hate programms that don't show
+# what they are doing right now.
+
+    for COUNT in `$SEQ 1 $PAGES`;
+    do
+      if [ `expr $COUNT / $TENS` -gt 0 ]
+      then
+        TENS=`expr $TENS \* 10`
+        ZEROCOUNT=`expr $ZEROCOUNT - 1`
+        ZEROS=$(for i in `$SEQ 1 $ZEROCOUNT`; do echo -n 0; done)
+      fi
+
+      ddjvu -format=pnm -page $COUNT "$FILENAME" "$TEMP/$FILEBASE.${ZEROS}$COUNT.pnm" 2> /dev/null
+      if [ $? -eq 0 ]
+      then
+        pnmtops "$TEMP/$FILEBASE.${ZEROS}$COUNT.pnm" > "$TEMP/$FILEBASE.${ZEROS}$COUNT.ps" 2> /dev/null
+        if [ $? -eq 0 ]
+        then
+          rm -f "$TEMP/$FILEBASE.${ZEROS}$COUNT.pnm"
+        else
+          echo "Error in converting the .pnm file to a .ps file"
+          exit 1
+        fi
+      else
+        echo "Error in converting the .djvu file to a .pnm file"
+        exit 1
+      fi
+      print_quiet "Page $COUNT/$PAGES dumped"
+      move_cursor
+    done 
+    
+    clean_cursor
+    
+    print_quiet "\nDumping finished - writing $OUTPUTFILE\n"
+    gs -dSAFER -dQUIET -dBATCH -sDEVICE=pdfwrite -sOutputFile="$OUTPUTFILE" -DNOPAUSE "$TEMP/$FILEBASE".*.ps
+
+    check_print_error "Error in creating pdf file"
+
+    clean_temp_files
+
+    shift
+done
+
+exit 0
