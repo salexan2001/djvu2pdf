@@ -1,7 +1,7 @@
 #!/bin/sh
-# (c) Christoph Sieghart <sigi@0x2a.at> 2007
+# (c) Christoph Sieghart <sigi@0x2a.at> 2007 - 2009
 
-VERSION=0.7.2
+VERSION=0.7.3
 
 # Flags for commandline options
 Q_FLAG=0
@@ -80,13 +80,12 @@ else
     SEQ=jot
 fi
 
-ORIG_PARAM="$@"
 for i in "pnmtops netpbm" "ddjvu djvulibre" "gs ghostscript"; do
-    set $i
-    which $1 >/dev/null 2>&1
-    check_print_error "$1 not found. Install $2"
+    BINARY=$(echo $i | awk '{print $1'})
+    PACKAGE=$(echo $i | awk '{print $2'})
+    which $BINARY >/dev/null 2>&1
+    check_print_error "$BINARY not found. Install $PACKAGE."
 done
-set -- $ORIG_PARAM
 
 #*****************************************************************************
 # - Temporary Files
@@ -117,7 +116,7 @@ done
 
 shift `expr $OPTIND - 1`
 
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
   echo -e "Error: $0: No file specified for conversion"
   exit 1
 fi
@@ -128,7 +127,7 @@ fi
 
 while [ $# -gt 0 ]; do
 
-    if [ ! -f $1 ]; then
+    if [ ! -f "$1" ]; then
         echo -e "Error: $0: File '$1' not found"
         exit 1
     fi
@@ -173,10 +172,10 @@ while [ $# -gt 0 ]; do
       fi
       print_quiet "Page $COUNT/$PAGES dumped"
       move_cursor
-    done 
-    
+    done
+
     clean_cursor
-    
+
     print_quiet "\nDumping finished - writing $OUTPUTFILE\n"
     gs -dSAFER -dQUIET -dBATCH -sDEVICE=pdfwrite -sOutputFile="$OUTPUTFILE" -DNOPAUSE "$TEMP/$FILEBASE".*.ps
 
