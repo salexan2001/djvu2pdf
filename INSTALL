@@ -8,4 +8,4 @@ djvu2pdf INSTALL
 
  To install the manpage, copy it in your man1 directory.
 
-  # mv djvu2pdf.1.gz /usr/man/man1
+  # mv djvu2pdf.1.gz /usr/share/man/man1
