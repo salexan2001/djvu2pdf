@@ -1,0 +1,6 @@
+djvu2pdf (0.9.1) stable; urgency=low
+
+   * Fixed bug when whitespace occurs in filename
+
+   -- Christoph Sieghart <sigi@0x2a.at>  Fri, 30 Oct 2009 14:25:10 +0100
+
