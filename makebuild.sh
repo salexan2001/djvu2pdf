@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FILES="djvu2pdf djvu2pdf.1.gz CHANGES INSTALL COPYING"
+FILES="djvu2pdf djvu2pdf.1.gz changelog INSTALL copyright"
 OUTPUT=djvu2pdf
 VERSION=$(grep VERSION= djvu2pdf | sed 's/VERSION=//g; s/ *//g')
 
