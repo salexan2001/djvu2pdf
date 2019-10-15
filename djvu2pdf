@@ -34,7 +34,7 @@ print_help() {
     echo "  -h       Prints this help"
     echo "  -v       Prints the version number"
     echo "  -s       Show status messages (A little bit slower - every page"
-    echo "           gets dumped on its own and later recombined"
+    echo "           gets dumped on its own and later recombined)"
     echo "  -q       Set the quality option of ddjvu ranging from 25 (worst) to 150 (best)."
     echo "           See the manpage DDJVU(1) for more details."
     echo -e "  -c       Don't use terminal escape sequences to move cursor \n"
