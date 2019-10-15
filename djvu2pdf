@@ -7,6 +7,9 @@ VERSION=0.9.1
 S_FLAG=0
 C_FLAG=0
 
+# Quality option:
+QUALITY=80
+
 trap 'if [ $S_FLAG -eq 1 ]; then clean_temp_dir; clean_cursor; fi' 0 1 2
 
 #*****************************************************************************
@@ -32,6 +35,8 @@ print_help() {
     echo "  -v       Prints the version number"
     echo "  -s       Show status messages (A little bit slower - every page"
     echo "           gets dumped on its own and later recombined"
+    echo "  -q       Set the quality option of ddjvu ranging from 25 (worst) to 150 (best)."
+    echo "           See the manpage DDJVU(1) for more details."
     echo -e "  -c       Don't use terminal escape sequences to move cursor \n"
     exit 1
 }
@@ -95,7 +100,7 @@ done
 # - Commandline options
 #*****************************************************************************
 
-while getopts hvcs opt
+while getopts "hvcsq:" opt
 do
     case "$opt" in
         v) print_version
@@ -103,6 +108,7 @@ do
         h) print_help;;
         c) C_FLAG=1;;
         s) S_FLAG=1;;
+        q) QUALITY=$OPTARG;;
         \?) exit 1;;
     esac
 done
@@ -137,7 +143,7 @@ while [ $# -gt 0 ]; do
     OUTPUTFILE="${FILEBASE}.pdf"
 
     if [ $S_FLAG -eq 0 ]; then
-        ddjvu -format=pdf "${FILENAME}" "${OUTPUTFILE}" 2> /dev/null
+        ddjvu -format=pdf -quality=$QUALITY "${FILENAME}" "${OUTPUTFILE}" 2> /dev/null
     else
 
         #*****************************************************************************
@@ -171,7 +177,7 @@ while [ $# -gt 0 ]; do
                 ZEROS=$(for i in `$SEQ 1 $ZEROCOUNT`; do echo -n 0; done)
             fi
 
-            ddjvu -format=pdf -page $COUNT "$FILENAME" "$TEMP/$FILEBASE.${ZEROS}$COUNT.pdf" 2> /dev/null
+            ddjvu -format=pdf -quality=$QUALITY -page $COUNT "$FILENAME" "$TEMP/$FILEBASE.${ZEROS}$COUNT.pdf" 2> /dev/null
 
             print_quiet "Page $COUNT/$PAGES dumped"
             move_cursor
